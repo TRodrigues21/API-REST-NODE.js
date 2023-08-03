@@ -1,0 +1,11 @@
+API = Interface de Programação de Aplicação
+REST = Transferência de Estado Representacional  (Modelo de Arquitetura)
+
+Alguns aspectos são:
+- Conceito de Recurso
+- Cada recurso tem uma URI (/livros /autores /editoras)
+- Comunicaão stateless (Não guarda estado)
+- Métodos HTTP para manipular os recursos (GET, POST, PUT, DELETE)
+- Formato de reprpesentação do recurso (JSON, XML, HTML)
+
+Nodemon: Usado para reiniciar o servidor após cada alteração salva no projeto
