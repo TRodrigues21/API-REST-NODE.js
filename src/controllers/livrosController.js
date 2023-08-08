@@ -1,10 +1,12 @@
-import livros from "../models/Livro.js";
+import NaoEncontrado from "../erros/NaoEncontrado.js";
+import { livros } from "../models/index.js";
 
 class LivroController {
 
   // Metodo para listar livros
-  static listarLivros = async (req, res) => {
+  static listarLivros = async (req, res, next) => {
     try {
+
       const livrosResultados = await livros.find()
         .populate("autor")
         .exec();
@@ -12,12 +14,12 @@ class LivroController {
       res.status(200).json(livrosResultados);
     }
     catch (erro) {
-      res.status(500).json({message: "Erro intrno no servidor"});
+      next(erro);
     }
   };
 
   // Metodo para listar um livro por id
-  static listarLivroPorId = async (req, res) => {
+  static listarLivroPorId = async (req, res, next) => {
     try {
       const id = req.params.id;
 
@@ -25,16 +27,20 @@ class LivroController {
         .populate("autor", "nome")
         .exec();
 
-      res.status(200).send(livrosResultados);
-
+      if(livrosResultados !== null) {
+        res.status(200).send(livrosResultados);
+      }
+      else {
+        next(new NaoEncontrado("Id do Livro não localizado!"));
+      }
     }
     catch (erro) {
-      res.status(400).send({message: `${erro.message} - Id do livro não localizado!`});
+      next(erro);
     }
   };
 
   // Metodo para cadastrar livro
-  static cadastrarLivro = async (req, res) => {
+  static cadastrarLivro = async (req, res, next) => {
     try {
       let livros = new livros(req.body);
 
@@ -43,40 +49,51 @@ class LivroController {
       res.status(201).send(livroResultado.toJSON());
     }
     catch (erro) {
-      res.status(500).send({message: `${erro.message} - Falha ao cadastrar livro!`});
+      next(erro);
     }
   };
 
   // Metodo para atualizar um livro por id
-  static atualizarLivro = async (req, res) => {
+  static atualizarLivro = async (req, res, next) => {
     try {
       const id = req.params.id;
 
-      await livros.findByIdAndUpdate(id, {$set: req.body});
+      const livroResultado = await livros.findByIdAndUpdate(id, {$set: req.body});
 
-      res.atatus(200).send({message: "Livro atualizado com sucesso!"});
+      if(livroResultado !== null) {
+        res.atatus(200).send({message: "Livro atualizado com sucesso!"});
+      }
+      else {
+        next(new NaoEncontrado("Id do Livro não localizado!"));
+      }
+
     }
     catch (erro) {
-      res.status(500).send({message: erro.message});
+      next(erro);
     }
   };
 
   // Metodo para escluir um livro por id
-  static excluirLivro = async (req, res) => {
+  static excluirLivro = async (req, res, next) => {
     try {
       const id = req.params.id;
 
-      await livros.findByIdAndDelete(id);
+      const livroResultado = await livros.findByIdAndDelete(id);
 
-      res.status(200).send({message: "Livro removido com sucesso!"});
+      if(livroResultado !== null){
+        res.status(200).send({message: "Livro removido com sucesso!"});
+      }
+      else {
+        next(new NaoEncontrado("Id do Livro não localizado!"));
+      }
     }
     catch (erro) {
-      res.atatus(500).send({message: erro.message});
+      next(erro);
     }
   };
 
   // Metodo de busca por editora usando req.query
-  static listarLivroPorEditora = async (req, res) => {
+  static listarLivroPorEditora = async (req, res, next) => {
     try {
       const editora = req.params.editora;
 
@@ -85,7 +102,7 @@ class LivroController {
       res.status(200).send(livroResultado);
     }
     catch (erro) {
-      res.atatus(500).json({message: "Erro interno no servidor!"});
+      next(erro);
     }
   };
 }
