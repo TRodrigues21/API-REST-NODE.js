@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import autoPopulate from "mongoose-autopopulate";
 
 // Schema Livros com alguns tratamentos de erros nativos do mongoose
 const livroSchema = new mongoose.Schema(
@@ -10,7 +11,11 @@ const livroSchema = new mongoose.Schema(
     autor: {
       type: mongoose.Schema.Types.ObjectId, 
       ref:"autores", 
-      require: [true, "O(a) autor(a) é obrigatório"]},
+      require: [true, "O(a) autor(a) é obrigatório"],
+      autoPopulate: {
+        select: "nome"
+      }
+    },
     editora: {
       type: String, 
       require: [true, "A editora é obrigatória!"]
@@ -27,6 +32,7 @@ const livroSchema = new mongoose.Schema(
   }
 );
 
+livroSchema.plugin(autoPopulate);
 const livros = mongoose.model("livros", livroSchema);
 
 export default livros;

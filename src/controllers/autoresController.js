@@ -10,9 +10,11 @@ class AutorController {
   // Metodo para listar autores
   static listarAutores = async (req, res, next) => {
     try { // caso de sucesso
-      const autoresResultado = await autores.find(); 
+      const autoresResultado =  autores.find(); 
+
+      req.resultado = autoresResultado;
   
-      res.status(200).jason(autoresResultado);
+      next();
     }
     catch (erro) { // caso de erro
       next(erro);

@@ -1,17 +1,16 @@
 import NaoEncontrado from "../erros/NaoEncontrado.js";
-import { livros } from "../models/index.js";
+import { autores, livros } from "../models/index.js";
 
 class LivroController {
 
   // Metodo para listar livros
   static listarLivros = async (req, res, next) => {
     try {
+      const buscaLivros = livros.find(); // guarda a query do monggose busca livros
 
-      const livrosResultados = await livros.find()
-        .populate("autor")
-        .exec();
+      req.resultado = buscaLivros; // Guarda e envia um requisição para outro middlewares
 
-      res.status(200).json(livrosResultados);
+      next();
     }
     catch (erro) {
       next(erro);
@@ -23,9 +22,7 @@ class LivroController {
     try {
       const id = req.params.id;
 
-      const livrosResultados = await livros.findById(id)
-        .populate("autor", "nome")
-        .exec();
+      const livrosResultados = await livros.findById(id);
 
       if(livrosResultados !== null) {
         res.status(200).send(livrosResultados);
@@ -93,18 +90,70 @@ class LivroController {
   };
 
   // Metodo de busca por editora usando req.query
-  static listarLivroPorEditora = async (req, res, next) => {
+  static listarLivroPorFiltro = async (req, res, next) => {
     try {
-      const editora = req.params.editora;
+      const busca = await processaBusca(req.query);
 
-      const livroResultado = await livros.find({"editora": editora});
+      if (busca !== null) {
+        // Busca usando a sintaxe do proprio mongoDB para fazer o filtro
+        const livrosResultado =  livros
+          .find(busca);
 
-      res.status(200).send(livroResultado);
+        req.resultado = livrosResultado;
+
+        next();
+      }
+      else {
+        res.status(200).send([]);
+      }
+     
     }
     catch (erro) {
       next(erro);
     }
   };
 }
+
+async function processaBusca(parametros) {
+  
+  const { editora, titulo, minPagina, maxPagina, nomeAutor } = parametros;
+  /*
+  // regex para busca dinamica nativa do JS o RegExp
+  const regex = new RegExp(titulo, "i");
+  */
+
+  // Ojeto vazio
+  let busca = {};
+
+  // Condicionais ´para prencher o objeto a cima vazio caso ele exista
+  if (editora ) busca.editora = editora;
+  if (titulo) busca.titulo = {$regex: titulo, $options: "i"}; // Usando a sintaxe do mongoDb para buscas com regex
+
+  // Inicia o numPaginas como um objeto vazio deixando dinamico 
+  if(minPagina || maxPagina) busca.numeroPaginas = {};
+
+  // Operadores de busca do mongoDB
+  // Mior ou igual que 
+  if (minPagina) busca.numeroPaginas.$gte = minPagina;
+  // Menor ou igual que
+  if (maxPagina) busca.numeroPaginas.$lte = maxPagina;
+
+  if (nomeAutor) {
+    // Busca o objeto de busca
+    const autor = await autores.findOne({ nome: nomeAutor });
+
+    if (autor !== null){
+      // busca recebe o id do autor
+      busca.autor = autor._id;
+    }
+    else {
+      busca = null;
+    }
+
+  }
+
+  return busca;
+}
+
 
 export default LivroController;
